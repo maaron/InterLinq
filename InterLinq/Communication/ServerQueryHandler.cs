@@ -171,10 +171,6 @@ namespace InterLinq.Communication
                 object convertedReturnValue = TypeConverter.ConvertToSerializable(returnValue);
                 return convertedReturnValue;
             }
-            catch
-            {
-                throw;
-            }
             finally
             {
                 QueryHandler.CloseSession();
@@ -225,10 +221,6 @@ namespace InterLinq.Communication
                 object returnValue = serializableExpression.Convert(QueryHandler);
                 object convertedReturnValue = TypeConverter.ConvertToSerializable(returnValue);
                 return convertedReturnValue;
-            }
-            catch
-            {
-                throw;
             }
             finally
             {

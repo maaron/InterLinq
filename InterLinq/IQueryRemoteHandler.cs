@@ -51,7 +51,7 @@ namespace InterLinq
         /// <returns>Returns requested data.</returns>
         [OperationContract]
         [NetDataContractFormat]
-        [FaultContract(typeof(Exception))]
+        [FaultContract(typeof(ExceptionDetail))]
         object Retrieve(SerializableExpression expression);
 
     }

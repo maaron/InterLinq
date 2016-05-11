@@ -120,7 +120,7 @@ namespace InterLinq.Communication.Wcf
                 innerstException = innerstException.InnerException;
             }
             Console.WriteLine(innerstException.Message);
-            throw new FaultException<Exception>(exception);
+            throw new FaultException<ExceptionDetail>(new ExceptionDetail(exception));
         }
 
         #endregion

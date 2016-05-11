@@ -15,58 +15,76 @@ namespace InterLinq.Examples.Simple.Client
         /// </summary>
         static void Main()
         {
-            Console.WriteLine("InterLinq.Examples.Simple.Client is going to start...");
+            try
+            {
+                Console.WriteLine("InterLinq.Examples.Simple.Client is going to start...");
 
-            // Connect to the server
-            // using the default connection (TCP-Binding, Binary, tcp://localhost:7890/InterLinqService)
-            Console.WriteLine("Connecting to the server...");
-            ClientQueryWcfHandler clientQueryHandler = new ClientQueryWcfHandler();
-            clientQueryHandler.Connect("InterLinqServiceNetTcp");
+                // Connect to the server
+                // using the default connection (TCP-Binding, Binary, tcp://localhost:7890/InterLinqService)
+                Console.WriteLine("Connecting to the server...");
+                ClientQueryWcfHandler clientQueryHandler = new ClientQueryWcfHandler();
+                clientQueryHandler.Connect("InterLinqServiceNetTcp");
 
-            // Create a SimpleExampleContext
-            Console.WriteLine("Creating a SimpleExampleContext...");
-            SimpleExampleContext simpleExampleContext = new SimpleExampleContext(clientQueryHandler);
-            Console.WriteLine("Client is connected.");
-            Console.WriteLine();
+                // Create a SimpleExampleContext
+                Console.WriteLine("Creating a SimpleExampleContext...");
+                SimpleExampleContext simpleExampleContext = new SimpleExampleContext(clientQueryHandler);
+                Console.WriteLine("Client is connected.");
+                Console.WriteLine();
 
-            #region Execute some LINQ statements
-            Console.WriteLine("Execute some LINQ statements...");
+                #region Execute some LINQ statements
+                Console.WriteLine("Execute some LINQ statements...");
 
-            #region Query 1
+                #region Query 1
 
-            var selectAllSimpleObjects = from so in simpleExampleContext.SimpleObjects
-                                         select so;
-            var list = selectAllSimpleObjects.ExecuteAsync();
+                var selectAllSimpleObjects = from so in simpleExampleContext.SimpleObjects
+                                             select so.Name[100].ToString();
 
-            System.Threading.Thread.Sleep(1000);
+                System.Threading.Thread.Sleep(1000);
 
-            Console.WriteLine("{0} SimpleObjects are stored on the server.", list.Result.Count());
+                Console.WriteLine("{0} SimpleObjects are stored on the server.", selectAllSimpleObjects.Count());
 
-            #endregion
+                #endregion
 
-            #region Query 2
+                #region Query 2
 
-            var valueOver9 = from so in simpleExampleContext.SimpleObjects
-                             where so.Value > 9
-                             select so;
-            Console.WriteLine("{0} SimpleObjects have a value over 9.", valueOver9.Count());
+                var valueOver9 = from so in simpleExampleContext.SimpleObjects
+                                 where so.Value > 9
+                                 select so;
+                Console.WriteLine("{0} SimpleObjects have a value over 9.", valueOver9.Count());
 
-            #endregion
+                #endregion
 
-            #region Query 3
+                #region Query 3
 
-            SimpleObject lastObject = (from so in simpleExampleContext.SimpleObjects
-                                       select so).Last();
-            Console.WriteLine("The name of the last Object is '{0}' and the value '{1}'.", lastObject.Name, lastObject.Value);
+                SimpleObject lastObject = (from so in simpleExampleContext.SimpleObjects
+                                           select so).Last();
+                Console.WriteLine("The name of the last Object is '{0}' and the value '{1}'.", lastObject.Name, lastObject.Value);
 
-            #endregion
+                #endregion
 
-            #endregion
+                #endregion
 
-            // Wait for user input
-            Console.WriteLine();
-            Console.WriteLine("Press [Enter] to quit.");
-            Console.ReadLine();
+                // Wait for user input
+                Console.WriteLine();
+                Console.WriteLine("Press [Enter] to quit.");
+                Console.ReadLine();
+            }
+            catch (System.ServiceModel.FaultException<System.ServiceModel.ExceptionDetail> e)
+            {
+                Console.WriteLine(e.Detail);
+
+                Console.WriteLine();
+                Console.WriteLine("Press [Enter] to quit.");
+                Console.ReadLine();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+
+                Console.WriteLine();
+                Console.WriteLine("Press [Enter] to quit.");
+                Console.ReadLine();
+            }
         }
     }
 }
