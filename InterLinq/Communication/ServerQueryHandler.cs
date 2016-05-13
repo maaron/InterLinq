@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.ServiceModel.Channels;
 using System.Reflection;
 using InterLinq.Types;
 using InterLinq.Expressions;
@@ -77,10 +78,11 @@ namespace InterLinq.Communication
         /// </param>
         /// <returns>Returns requested data.</returns>
         /// <seealso cref="IQueryRemoteHandler.Retrieve"/>
-        public object Retrieve(SerializableExpression expression)
+        public Message Retrieve(ExpressionMessage message)
         {
             try
             {
+                var expression = message.Expression;
 #if DEBUG
                 Console.WriteLine(expression);
                 Console.WriteLine();
@@ -115,7 +117,11 @@ namespace InterLinq.Communication
                 }
 #endif
 
-                return returnValue;
+                return System.ServiceModel.Channels.Message.CreateMessage(
+                    System.ServiceModel.OperationContext.Current.IncomingMessageVersion, 
+                    "RetrieveResponse",
+                    "thebody");
+                    //new RetrieveResultWriter(returnValue));
             }
             catch (Exception ex)
             {
