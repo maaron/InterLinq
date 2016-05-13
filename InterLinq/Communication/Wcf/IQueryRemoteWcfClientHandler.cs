@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.ServiceModel;
+using System.IO;
 using InterLinq.Expressions;
 using InterLinq.Communication.Wcf.NetDataContractSerializer;
 
@@ -14,7 +15,7 @@ namespace InterLinq.Communication.Wcf
     {
         [OperationContract(Action = "http://tempuri.org/IQueryRemoteHandler/Retrieve", ReplyAction = "http://tempuri.org/IQueryRemoteHandler/RetrieveResponse")]
         [NetDataContractFormat]
-        System.Threading.Tasks.Task<object> RetrieveAsync(SerializableExpression expression);
+        System.Threading.Tasks.Task<Stream> RetrieveAsync(SerializableExpression expression);
     }
 
     public partial class WcfClientQueryRemoteHandler 
@@ -45,12 +46,12 @@ namespace InterLinq.Communication.Wcf
         {
         }
 
-        public object Retrieve(SerializableExpression expression)
+        public Stream Retrieve(SerializableExpression expression)
         {
             return base.Channel.Retrieve(expression);
         }
 
-        public System.Threading.Tasks.Task<object> RetrieveAsync(SerializableExpression expression)
+        public System.Threading.Tasks.Task<Stream> RetrieveAsync(SerializableExpression expression)
         {
             return base.Channel.RetrieveAsync(expression);
         }

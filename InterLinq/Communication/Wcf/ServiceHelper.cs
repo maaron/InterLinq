@@ -111,6 +111,8 @@ namespace InterLinq.Communication.Wcf
             netTcpBinding.SendTimeout = new TimeSpan(0, 10, 0);
             netTcpBinding.ReceiveTimeout = new TimeSpan(0, 10, 0);
 
+            netTcpBinding.TransferMode = TransferMode.StreamedResponse;
+
             return netTcpBinding;
         }
 

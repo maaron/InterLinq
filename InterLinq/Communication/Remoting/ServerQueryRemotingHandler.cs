@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
+using System.IO;
 using InterLinq.Expressions;
 
 namespace InterLinq.Communication.Remoting
@@ -116,7 +117,7 @@ namespace InterLinq.Communication.Remoting
                 Hashtable properties = new Hashtable();
                 properties["name"] = RemotingConstants.DefaultServiceChannelName;
                 properties["port"] = RemotingConstants.DefaultServicePort;
-                IChannel currentChannel = RemotingConstants.GetDefaultChannel(properties);
+                System.Runtime.Remoting.Channels.IChannel currentChannel = RemotingConstants.GetDefaultChannel(properties);
                 ChannelServices.RegisterChannel(currentChannel, false);
             }
 
@@ -168,7 +169,7 @@ namespace InterLinq.Communication.Remoting
         /// </param>
         /// <returns>Returns requested data.</returns>
         /// <seealso cref="IQueryRemoteHandler.Retrieve"/>
-        public object Retrieve(SerializableExpression expression)
+        public Stream Retrieve(SerializableExpression expression)
         {
             return InnerHandler.Retrieve(expression);
         }

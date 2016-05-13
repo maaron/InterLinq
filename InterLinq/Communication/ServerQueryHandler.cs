@@ -1,6 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Linq;
 using System.Reflection;
+using System.IO;
+using System.IO.Pipes;
+using System.Runtime.Serialization;
 using InterLinq.Types;
 using InterLinq.Expressions;
 
@@ -77,7 +81,7 @@ namespace InterLinq.Communication
         /// </param>
         /// <returns>Returns requested data.</returns>
         /// <seealso cref="IQueryRemoteHandler.Retrieve"/>
-        public object Retrieve(SerializableExpression expression)
+        public Stream Retrieve(SerializableExpression expression)
         {
             try
             {
@@ -107,7 +111,7 @@ namespace InterLinq.Communication
                 try
                 {
                     System.IO.MemoryStream ms = new System.IO.MemoryStream();
-                    new System.Runtime.Serialization.NetDataContractSerializer().Serialize(ms, returnValue);
+                    new NetDataContractSerializer().Serialize(ms, returnValue);
                 }
                 catch (Exception)
                 {
@@ -115,13 +119,48 @@ namespace InterLinq.Communication
                 }
 #endif
 
-                return returnValue;
+                return MakePipedStream(returnValue);
             }
             catch (Exception ex)
             {
                 HandleExceptionInRetrieve(ex);
                 throw;
             }
+        }
+
+        private Stream MakePipedStream(object o)
+        {
+            var enumerable = o is IEnumerable ?
+                (IEnumerable)o
+                : new[] { o };
+
+            var pipe = new System.IO.Pipes.AnonymousPipeServerStream(
+                System.IO.Pipes.PipeDirection.Out, 
+                HandleInheritability.None);
+
+            var client = new AnonymousPipeClientStream(pipe.GetClientHandleAsString());
+
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    //using (pipe)
+                    {
+                        foreach (var element in enumerable)
+                        {
+                            var serializer = new NetDataContractSerializer();
+                            serializer.Serialize(pipe, element);
+                        }
+                        pipe.Close();
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+            });
+
+            return client;
         }
 
         /// <summary>

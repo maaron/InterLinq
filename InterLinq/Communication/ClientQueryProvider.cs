@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.IO;
+using System.Runtime.Serialization;
 using InterLinq.Expressions;
 using InterLinq.Types;
 using System.Threading.Tasks;
@@ -52,7 +55,60 @@ namespace InterLinq.Communication
         /// <seealso cref="InterLinqQueryProvider.Execute"/>
         public override TResult Execute<TResult>(Expression expression)
         {
-            return (TResult)TypeConverter.ConvertFromSerializable(typeof(TResult), Execute(expression));
+            var stream = (Stream)Execute(expression);
+
+            // If we are expecting an IEnumerable<>, return an IEnumerable 
+            // that enumerates objects as they are received in the stream.  
+            // Otherwise, the stream should only contain a single object and 
+            // we return that.
+            var elementType = GetIEnumerableElementType(typeof(TResult));
+
+            if (elementType != null)
+            {
+                var method = GetType().GetMethod("EnumerateStream").MakeGenericMethod(new[] { elementType });
+                var result = method.Invoke(this, new object[] { elementType, stream });
+                return (TResult)result;
+            }
+            else
+            {
+                var serializer = new NetDataContractSerializer();
+
+                using (stream)
+                {
+                    return (TResult)TypeConverter.ConvertFromSerializable(
+                        typeof(TResult),
+                        serializer.Deserialize(stream));
+                }
+            }
+        }
+
+        private static System.Reflection.MethodInfo MethodOf<T1, T2, TResult>(Func<T1, T2, TResult> f, T1 t1, T2 t2)
+        {
+            return f.Method;
+        }
+
+        private static bool FilterPredicate(Type t, object o)
+        {
+            return t.IsGenericType && 
+                t.GetGenericTypeDefinition() == typeof(IEnumerable<>);
+        }
+
+        private static Type GetIEnumerableElementType(Type type)
+        {
+            return type.FindInterfaces(FilterPredicate, null).FirstOrDefault();
+        }
+
+        private IEnumerable<T> EnumerateStream<T>(Type elementType, Stream stream)
+        {
+            var serializer = new NetDataContractSerializer();
+
+            using (stream)
+            {
+                while (stream.CanRead)
+                    yield return (T)TypeConverter.ConvertFromSerializable(
+                        typeof(T), 
+                        serializer.Deserialize(stream));
+            }
         }
 
         /// <summary>

@@ -80,8 +80,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Communication\IAsyncQueryProvider.cs" />
+    <Compile Include="Communication\QueryResult.cs" />
     <Compile Include="Communication\Remoting\ClientQueryRemotingHandler.cs" />
     <Compile Include="Communication\Remoting\RemotingConstants.cs" />
+    <Compile Include="Communication\RetrieveResultWriter.cs" />
     <Compile Include="Communication\Wcf\ClientQueryWcfProvider.cs" />
     <Compile Include="Communication\Wcf\IQueryRemoteWcfClientHandler.cs" />
     <Compile Include="Communication\Wcf\ServiceHelper.cs" />

@@ -37,7 +37,7 @@ namespace InterLinq.Examples.Simple.Client
                 #region Query 1
 
                 var selectAllSimpleObjects = from so in simpleExampleContext.SimpleObjects
-                                             select so.Name[100].ToString();
+                                             select so;
 
                 System.Threading.Thread.Sleep(1000);
 
