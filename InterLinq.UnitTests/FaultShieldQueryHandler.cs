@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ServiceModel;
+using System.ServiceModel.Channels;
 using InterLinq.Expressions;
 
 namespace InterLinq.UnitTests
@@ -111,7 +112,7 @@ namespace InterLinq.UnitTests
         /// </param>
         /// <returns>Returns requested data.</returns>
         /// <seealso cref="IQueryRemoteHandler.Retrieve"/>
-        public object Retrieve(SerializableExpression expression)
+        public Message Retrieve(ExpressionMessage expression)
         {
             try
             {

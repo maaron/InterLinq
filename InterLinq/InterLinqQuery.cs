@@ -177,9 +177,7 @@ namespace InterLinq
         /// </returns>
         public IEnumerator<T> GetEnumerator()
         {
-            IEnumerable retrievedObjects = (IEnumerable)provider.Execute(expression);
-            object returnValue = TypeConverter.ConvertFromSerializable(typeof(IEnumerable<T>), retrievedObjects);
-            return ((IEnumerable<T>)returnValue).GetEnumerator();
+            return ((IEnumerable<T>)provider.Execute(expression)).GetEnumerator();
         }
 
         #endregion

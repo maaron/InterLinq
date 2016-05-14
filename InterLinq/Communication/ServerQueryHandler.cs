@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Collections.Generic;
 using System.ServiceModel.Channels;
 using System.Reflection;
 using InterLinq.Types;
@@ -88,22 +89,63 @@ namespace InterLinq.Communication
                 Console.WriteLine();
 #endif
 
+                object returnValue = null;
                 MethodInfo mInfo;
                 Type realType = (Type)expression.Type.GetClrVersion();
                 if (typeof(IQueryable).IsAssignableFrom(realType) &&
                     realType.GetGenericArguments().Length == 1)
                 {
-                    // Find Generic Retrieve Method
-                    mInfo = GetType().GetMethod("RetrieveGeneric");
-                    mInfo = mInfo.MakeGenericMethod(realType.GetGenericArguments()[0]);
+                    // The client is asking for an IQueryable<>, so start 
+                    // serializing results as soon as we get them from the source.
+                    QueryHandler.StartSession();
+                    try
+                    {
+                        // Find Generic Retrieve Method
+                        mInfo = GetType().GetMethod("RetrieveGeneric");
+                        mInfo = mInfo.MakeGenericMethod(realType.GetGenericArguments()[0]);
+
+                        returnValue = mInfo.Invoke(this, new object[] { expression });
+
+                        return System.ServiceModel.Channels.Message.CreateMessage(
+                            System.ServiceModel.OperationContext.Current.IncomingMessageVersion,
+                            "http://tempuri.org/IQueryRemoteHandler/RetrieveResponse",
+                            new QueryableBodyWriter(returnValue, QueryHandler));
+                    }
+                    catch (Exception)
+                    {
+                        // Only close the session if there was an exception, 
+                        // otherwise the QueryableBodyWriter will do it once 
+                        // the query results are completely written to the 
+                        // stream.
+                        QueryHandler.CloseSession();
+                        throw;
+                    }
                 }
                 else
                 {
-                    // Find Non-Generic Retrieve Method
-                    mInfo = GetType().GetMethod("RetrieveNonGenericObject");
-                }
+                    // The client is asking for some other type.  In this 
+                    // case, we serialize the object in the message in a 
+                    // single shot.
+                    QueryHandler.StartSession();
+                    try
+                    {
+                        // Find Non-Generic Retrieve Method
+                        mInfo = GetType().GetMethod("RetrieveNonGenericObject");
 
-                object returnValue = mInfo.Invoke(this, new object[] { expression });
+                        returnValue = mInfo.Invoke(this, new object[] { expression });
+
+                        return System.ServiceModel.Channels.Message.CreateMessage(
+                            System.ServiceModel.OperationContext.Current.IncomingMessageVersion,
+                            "http://tempuri.org/IQueryRemoteHandler/RetrieveResponse",
+                            returnValue,
+                            new System.Runtime.Serialization.NetDataContractSerializer());
+                    }
+                    finally
+                    {
+                        // In this case, always ensure the session is closed.
+                        QueryHandler.CloseSession();
+                    }
+                }
 
 #if DEBUG
                 try
@@ -117,11 +159,7 @@ namespace InterLinq.Communication
                 }
 #endif
 
-                return System.ServiceModel.Channels.Message.CreateMessage(
-                    System.ServiceModel.OperationContext.Current.IncomingMessageVersion, 
-                    "RetrieveResponse",
-                    "thebody");
-                    //new RetrieveResultWriter(returnValue));
+                
             }
             catch (Exception ex)
             {
@@ -169,6 +207,7 @@ namespace InterLinq.Communication
         /// </remarks>
         public object RetrieveGeneric<T>(SerializableExpression serializableExpression)
         {
+#if false
             try
             {
                 QueryHandler.StartSession();
@@ -181,6 +220,9 @@ namespace InterLinq.Communication
             {
                 QueryHandler.CloseSession();
             }
+#else
+            return serializableExpression.Convert(QueryHandler);
+#endif
         }
 
         /// <summary>
@@ -247,15 +289,15 @@ namespace InterLinq.Communication
             throw exception;
         }
 
-        #endregion
+#endregion
 
-        #region IDisposable Members
+#region IDisposable Members
 
         /// <summary>
         /// Disposes the server instance.
         /// </summary>
         public virtual void Dispose() { }
 
-        #endregion
+#endregion
     }
 }
