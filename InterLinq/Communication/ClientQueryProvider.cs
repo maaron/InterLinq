@@ -80,17 +80,20 @@ namespace InterLinq.Communication
 
         private IEnumerable<T> EnumerateMessage<T>(Type elementType, System.ServiceModel.Channels.Message message)
         {
-            var serializer = new NetDataContractSerializer();
-
-            var reader = message.GetReaderAtBodyContents();
-
             using (message)
             {
-                while (!reader.EOF && reader.NodeType != System.Xml.XmlNodeType.EndElement)
+                var serializer = new NetDataContractSerializer();
+
+                if (!message.IsEmpty)
                 {
-                    yield return (T)TypeConverter.ConvertFromSerializable(
-                        typeof(T),
-                        serializer.ReadObject(reader));
+                    var reader = message.GetReaderAtBodyContents();
+
+                    while (!reader.EOF && reader.NodeType != System.Xml.XmlNodeType.EndElement)
+                    {
+                        yield return (T)TypeConverter.ConvertFromSerializable(
+                            typeof(T),
+                            serializer.ReadObject(reader));
+                    }
                 }
             }
         }
