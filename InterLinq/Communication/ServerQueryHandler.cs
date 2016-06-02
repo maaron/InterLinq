@@ -146,20 +146,6 @@ namespace InterLinq.Communication
                         QueryHandler.CloseSession();
                     }
                 }
-
-#if DEBUG
-                try
-                {
-                    System.IO.MemoryStream ms = new System.IO.MemoryStream();
-                    new System.Runtime.Serialization.NetDataContractSerializer().Serialize(ms, returnValue);
-                }
-                catch (Exception)
-                {
-                    throw;
-                }
-#endif
-
-                
             }
             catch (Exception ex)
             {
