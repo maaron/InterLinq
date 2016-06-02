@@ -47,7 +47,7 @@ namespace InterLinq.Communication
         /// Retrieves data from the server by an <see cref="SerializableExpression">Expression</see> tree.
         /// </summary>
         /// <remarks>
-        /// This method's return type depends on the submitted 
+        /// This method's return type depends on the submitted
         /// <see cref="SerializableExpression">Expression</see> tree.
         /// Here some examples ('T' is the requested type):
         /// <list type="list">
@@ -74,7 +74,7 @@ namespace InterLinq.Communication
         /// </list>
         /// </remarks>
         /// <param name="expression">
-        ///     <see cref="SerializableExpression">Expression</see> tree 
+        ///     <see cref="SerializableExpression">Expression</see> tree
         ///     containing selection and projection.
         /// </param>
         /// <returns>Returns requested data.</returns>
@@ -95,7 +95,7 @@ namespace InterLinq.Communication
                 if (typeof(IQueryable).IsAssignableFrom(realType) &&
                     realType.GetGenericArguments().Length == 1)
                 {
-                    // The client is asking for an IQueryable<>, so start 
+                    // The client is asking for an IQueryable<>, so start
                     // serializing results as soon as we get them from the source.
                     QueryHandler.StartSession();
                     try
@@ -113,9 +113,9 @@ namespace InterLinq.Communication
                     }
                     catch (Exception)
                     {
-                        // Only close the session if there was an exception, 
-                        // otherwise the QueryableBodyWriter will do it once 
-                        // the query results are completely written to the 
+                        // Only close the session if there was an exception,
+                        // otherwise the QueryableBodyWriter will do it once
+                        // the query results are completely written to the
                         // stream.
                         QueryHandler.CloseSession();
                         throw;
@@ -123,8 +123,8 @@ namespace InterLinq.Communication
                 }
                 else
                 {
-                    // The client is asking for some other type.  In this 
-                    // case, we serialize the object in the message in a 
+                    // The client is asking for some other type.  In this
+                    // case, we serialize the object in the message in a
                     // single shot.
                     QueryHandler.StartSession();
                     try
@@ -159,13 +159,13 @@ namespace InterLinq.Communication
         /// </summary>
         /// <typeparam name="T">Type of the <see cref="IQueryable"/>.</typeparam>
         /// <param name="serializableExpression">
-        ///     <see cref="SerializableExpression">Expression</see> tree 
+        ///     <see cref="SerializableExpression">Expression</see> tree
         ///     containing selection and projection.
         /// </param>
         /// <returns>Returns requested data.</returns>
         /// <seealso cref="IQueryRemoteHandler.Retrieve"/>
         /// <remarks>
-        /// This method's return type depends on the submitted 
+        /// This method's return type depends on the submitted
         /// <see cref="SerializableExpression">Expression</see> tree.
         /// Here some examples ('T' is the requested type):
         /// <list type="list">
@@ -215,12 +215,12 @@ namespace InterLinq.Communication
         /// Retrieves data from the server by an <see cref="SerializableExpression">Expression</see> tree.
         /// </summary>
         /// <param name="serializableExpression">
-        ///     <see cref="SerializableExpression">Expression</see> tree 
+        ///     <see cref="SerializableExpression">Expression</see> tree
         ///     containing selection and projection.
         /// </param>
         /// <returns>Returns requested data.</returns>
         /// <remarks>
-        /// This method's return type depends on the submitted 
+        /// This method's return type depends on the submitted
         /// <see cref="SerializableExpression">Expression</see> tree.
         /// Here some examples ('T' is the requested type):
         /// <list type="list">
@@ -263,11 +263,11 @@ namespace InterLinq.Communication
         }
 
         /// <summary>
-        /// Handles an <see cref="Exception"/> occured in the 
+        /// Handles an <see cref="Exception"/> occured in the
         /// <see cref="IQueryRemoteHandler.Retrieve"/> Method.
         /// </summary>
         /// <param name="exception">
-        /// Thrown <see cref="Exception"/> 
+        /// Thrown <see cref="Exception"/>
         /// in <see cref="IQueryRemoteHandler.Retrieve"/> Method.
         /// </param>
         protected virtual void HandleExceptionInRetrieve(Exception exception)
