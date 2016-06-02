@@ -79,7 +79,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Communication\ExpressionMessage.cs" />
     <Compile Include="Communication\IAsyncQueryProvider.cs" />
+    <Compile Include="Communication\QueryableBodyWriter.cs" />
     <Compile Include="Communication\Remoting\ClientQueryRemotingHandler.cs" />
     <Compile Include="Communication\Remoting\RemotingConstants.cs" />
     <Compile Include="Communication\Wcf\ClientQueryWcfProvider.cs" />

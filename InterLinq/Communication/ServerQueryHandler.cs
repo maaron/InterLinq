@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Linq;
+using System.Collections.Generic;
+using System.ServiceModel.Channels;
 using System.Reflection;
 using InterLinq.Types;
 using InterLinq.Expressions;
@@ -45,7 +47,7 @@ namespace InterLinq.Communication
         /// Retrieves data from the server by an <see cref="SerializableExpression">Expression</see> tree.
         /// </summary>
         /// <remarks>
-        /// This method's return type depends on the submitted 
+        /// This method's return type depends on the submitted
         /// <see cref="SerializableExpression">Expression</see> tree.
         /// Here some examples ('T' is the requested type):
         /// <list type="list">
@@ -72,50 +74,78 @@ namespace InterLinq.Communication
         /// </list>
         /// </remarks>
         /// <param name="expression">
-        ///     <see cref="SerializableExpression">Expression</see> tree 
+        ///     <see cref="SerializableExpression">Expression</see> tree
         ///     containing selection and projection.
         /// </param>
         /// <returns>Returns requested data.</returns>
         /// <seealso cref="IQueryRemoteHandler.Retrieve"/>
-        public object Retrieve(SerializableExpression expression)
+        public Message Retrieve(ExpressionMessage message)
         {
             try
             {
+                var expression = message.Expression;
 #if DEBUG
                 Console.WriteLine(expression);
                 Console.WriteLine();
 #endif
 
+                object returnValue = null;
                 MethodInfo mInfo;
                 Type realType = (Type)expression.Type.GetClrVersion();
                 if (typeof(IQueryable).IsAssignableFrom(realType) &&
                     realType.GetGenericArguments().Length == 1)
                 {
-                    // Find Generic Retrieve Method
-                    mInfo = GetType().GetMethod("RetrieveGeneric");
-                    mInfo = mInfo.MakeGenericMethod(realType.GetGenericArguments()[0]);
+                    // The client is asking for an IQueryable<>, so start
+                    // serializing results as soon as we get them from the source.
+                    QueryHandler.StartSession();
+                    try
+                    {
+                        // Find Generic Retrieve Method
+                        mInfo = GetType().GetMethod("RetrieveGeneric");
+                        mInfo = mInfo.MakeGenericMethod(realType.GetGenericArguments()[0]);
+
+                        returnValue = mInfo.Invoke(this, new object[] { expression });
+
+                        return System.ServiceModel.Channels.Message.CreateMessage(
+                            System.ServiceModel.OperationContext.Current.IncomingMessageVersion,
+                            "http://tempuri.org/IQueryRemoteHandler/RetrieveResponse",
+                            new QueryableBodyWriter(returnValue, QueryHandler));
+                    }
+                    catch (Exception)
+                    {
+                        // Only close the session if there was an exception,
+                        // otherwise the QueryableBodyWriter will do it once
+                        // the query results are completely written to the
+                        // stream.
+                        QueryHandler.CloseSession();
+                        throw;
+                    }
                 }
                 else
                 {
-                    // Find Non-Generic Retrieve Method
-                    mInfo = GetType().GetMethod("RetrieveNonGenericObject");
-                }
+                    // The client is asking for some other type.  In this
+                    // case, we serialize the object in the message in a
+                    // single shot.
+                    QueryHandler.StartSession();
+                    try
+                    {
+                        // Find Non-Generic Retrieve Method
+                        mInfo = GetType().GetMethod("RetrieveNonGenericObject");
 
-                object returnValue = mInfo.Invoke(this, new object[] { expression });
+                        returnValue = mInfo.Invoke(this, new object[] { expression });
 
-#if DEBUG
-                try
-                {
-                    System.IO.MemoryStream ms = new System.IO.MemoryStream();
-                    new System.Runtime.Serialization.NetDataContractSerializer().Serialize(ms, returnValue);
+                        return System.ServiceModel.Channels.Message.CreateMessage(
+                            System.ServiceModel.OperationContext.Current.IncomingMessageVersion,
+                            "http://tempuri.org/IQueryRemoteHandler/RetrieveResponse",
+                            returnValue,
+                            new System.Runtime.Serialization.NetDataContractSerializer());
+                    }
+                    finally
+                    {
+                        // In this case, always ensure the session is closed.
+                        QueryHandler.CloseSession();
+                    }
                 }
-                catch (Exception)
-                {
-                    throw;
-                }
-#endif
-
-                return returnValue;
             }
             catch (Exception ex)
             {
@@ -129,13 +159,13 @@ namespace InterLinq.Communication
         /// </summary>
         /// <typeparam name="T">Type of the <see cref="IQueryable"/>.</typeparam>
         /// <param name="serializableExpression">
-        ///     <see cref="SerializableExpression">Expression</see> tree 
+        ///     <see cref="SerializableExpression">Expression</see> tree
         ///     containing selection and projection.
         /// </param>
         /// <returns>Returns requested data.</returns>
         /// <seealso cref="IQueryRemoteHandler.Retrieve"/>
         /// <remarks>
-        /// This method's return type depends on the submitted 
+        /// This method's return type depends on the submitted
         /// <see cref="SerializableExpression">Expression</see> tree.
         /// Here some examples ('T' is the requested type):
         /// <list type="list">
@@ -163,6 +193,7 @@ namespace InterLinq.Communication
         /// </remarks>
         public object RetrieveGeneric<T>(SerializableExpression serializableExpression)
         {
+#if false
             try
             {
                 QueryHandler.StartSession();
@@ -175,18 +206,21 @@ namespace InterLinq.Communication
             {
                 QueryHandler.CloseSession();
             }
+#else
+            return serializableExpression.Convert(QueryHandler);
+#endif
         }
 
         /// <summary>
         /// Retrieves data from the server by an <see cref="SerializableExpression">Expression</see> tree.
         /// </summary>
         /// <param name="serializableExpression">
-        ///     <see cref="SerializableExpression">Expression</see> tree 
+        ///     <see cref="SerializableExpression">Expression</see> tree
         ///     containing selection and projection.
         /// </param>
         /// <returns>Returns requested data.</returns>
         /// <remarks>
-        /// This method's return type depends on the submitted 
+        /// This method's return type depends on the submitted
         /// <see cref="SerializableExpression">Expression</see> tree.
         /// Here some examples ('T' is the requested type):
         /// <list type="list">
@@ -229,11 +263,11 @@ namespace InterLinq.Communication
         }
 
         /// <summary>
-        /// Handles an <see cref="Exception"/> occured in the 
+        /// Handles an <see cref="Exception"/> occured in the
         /// <see cref="IQueryRemoteHandler.Retrieve"/> Method.
         /// </summary>
         /// <param name="exception">
-        /// Thrown <see cref="Exception"/> 
+        /// Thrown <see cref="Exception"/>
         /// in <see cref="IQueryRemoteHandler.Retrieve"/> Method.
         /// </param>
         protected virtual void HandleExceptionInRetrieve(Exception exception)
@@ -241,15 +275,15 @@ namespace InterLinq.Communication
             throw exception;
         }
 
-        #endregion
+#endregion
 
-        #region IDisposable Members
+#region IDisposable Members
 
         /// <summary>
         /// Disposes the server instance.
         /// </summary>
         public virtual void Dispose() { }
 
-        #endregion
+#endregion
     }
 }

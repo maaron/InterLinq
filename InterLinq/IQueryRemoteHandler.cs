@@ -2,7 +2,7 @@
 using System.ServiceModel;
 using InterLinq.Expressions;
 using InterLinq.Communication.Wcf.NetDataContractSerializer;
-using System.Threading.Tasks;
+using System.ServiceModel.Channels;
 
 namespace InterLinq
 {
@@ -52,7 +52,7 @@ namespace InterLinq
         [OperationContract]
         [NetDataContractFormat]
         [FaultContract(typeof(ExceptionDetail))]
-        object Retrieve(SerializableExpression expression);
+        Message Retrieve(ExpressionMessage expression);
 
     }
 }

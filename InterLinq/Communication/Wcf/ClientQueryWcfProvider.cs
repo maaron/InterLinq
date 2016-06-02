@@ -18,9 +18,11 @@ namespace InterLinq.Communication.Wcf
 
         public Task<IEnumerable<object>> ExecuteAsync(Expression expression)
         {
-            return ((IQueryRemoteWcfClientHandler)Handler).RetrieveAsync(
-                expression.MakeSerializable()).ContinueWith(task =>
-                    (IEnumerable<object>)task.Result);
+            return ((IQueryRemoteWcfClientHandler)Handler).RetrieveAsync(new ExpressionMessage()
+            {
+                Expression = expression.MakeSerializable()
+            })
+            .ContinueWith((Task<System.ServiceModel.Channels.Message> task) => (IEnumerable<object>)task.Result);
         }
 
         public Task<IEnumerable<TResult>> ExecuteAsync<TResult>(Expression expression)
